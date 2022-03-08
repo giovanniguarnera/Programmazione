@@ -1,0 +1,116 @@
+#include <algorithm>
+#include <iostream>
+#include <string>
+
+//LA FUNZIONE OPFINDER CERCA L'OPERATORE ALL'INTERNO DELLA STRINGA E NE ASSEGNA IL VALORE AD UNA VARIABILE B DICHIARATA NELLA FUNZIONE COMPUTE
+char opFinder(std::string const &str) {
+  bool searcher = true;
+  int counter = 0;
+  char b;
+  while (searcher) {
+    if (str[counter] == '+' || str[counter] == '-' || str[counter] == 'x' ||
+        str[counter] == '/') {
+      b = str[counter];
+      searcher = false;
+    }
+    if (counter < str.length() - 1) {
+      counter++;
+    } else {
+      searcher = false;
+      throw std::runtime_error{
+          "Operator is invalid or operation is not possible."};
+    }
+  }
+  return b;
+}
+
+//LA FUNZIONE WHITESPACEBREAKER ELIMINA GLI SPAZI ALL'INTERNO DELLA STRINGA, IN MANIERA TALE CHE SIA, SUCCESSIVAMENTE, FACILE LEGGERLA PER ASSEGNARE I VALORI AGLI OPERANDI
+void whiteSpaceBreaker(std::string const &str, std::string &opstr,
+                       char const &b) {
+  bool whiteSpace = false;
+  bool whiteSpaceSwitch = true;
+  for (int i = 0; i != str.length(); i++) {
+    if ((str[i] != ' ' && str[i] != b) && whiteSpace) {
+      throw std::runtime_error{"Can't read the operation."};
+    } else if (str[i] == ' ') {
+      if (!whiteSpaceSwitch) {
+        whiteSpace = true;
+      }
+      continue;
+    } else {
+      opstr += str[i];
+      if (whiteSpaceSwitch) {
+        whiteSpaceSwitch = false;
+      }
+      whiteSpace = false;
+      if (str[i] == b) {
+        whiteSpaceSwitch = true;
+      }
+    }
+  }
+}
+
+//LA FUNZIONE BUILDER COSTRUISCE I VALORI DEGLI OPERANDI
+void builder(float &d, std::string const &opstr, int const &counter_1,
+             int const &counter_2) {
+  int N = 1;
+  for (int i = counter_1 - 1; i >= counter_2; i--) {
+    d = d + (static_cast<float>(opstr[i]) - 48) * N;
+    N = N * 10;
+  }
+}
+
+//LA FUNZIONE COMPUTE ESEGUE IL VERO E PROPRIO CALCOLO ED IN ESSA SONO RICHIAMATE TUTTE LE FUNZIONI DI SOPRA
+float compute(std::string const &str) {
+  bool searcher = true;
+  int counter = 0;
+  float a = 0.;
+  char b = opFinder(str);
+  float c = 0.;
+  std::string opstr;
+  whiteSpaceBreaker(str, opstr, b);
+  while (searcher) {
+    if (opstr[counter] == b) {
+      int counter_1 = counter;
+      int counter_2 = 0.;
+      builder(a, opstr, counter_1, counter_2);
+      counter_2 = counter_1 + 1;
+      counter_1 = opstr.length();
+      builder(c, opstr, counter_1, counter_2);
+      searcher = false;
+    }
+    if (counter < opstr.length() - 1) {
+      counter++;
+    } else {
+      searcher = false;
+    }
+  }
+  switch (b) {
+  case '+':
+    return a + c;
+  case '-':
+    return a - c;
+  case 'x':
+    return a * c;
+  case '/':
+    if (c == 0) {
+      throw std::runtime_error{"Denominator is zero."};
+    }
+    return a / c;
+  }
+  return 0.;
+}
+
+//NEL MAIN FACCIO UN CONTROLLO DEGLI ERRORI
+int main() {
+  std::string op;
+  std::cout << "Please insert an operation: ";
+  std::getline(std::cin, op);
+  try {
+    float result = compute(op);
+    std::cout << "The result is: " << result << '\n';
+  } catch (std::runtime_error const &e) {
+    std::cout << "Something went wrong, ";
+    std::cerr << e.what() << '\n';
+  }
+}
